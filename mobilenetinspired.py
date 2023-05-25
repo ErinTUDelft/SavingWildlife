@@ -49,7 +49,7 @@ class LightNet(nn.Module):
     '''
     Lightweight network for object detection on raspberry pi zero
     '''
-    def __init__(self):
+    def __init__(self,nr_bottlenecks):
         super(LightNet, self).__init__()
 
         self.conv1 = nn.Conv2d(1,3,3,stride=2, padding = 0)
@@ -57,13 +57,18 @@ class LightNet(nn.Module):
         self.conv3 = nn.Conv2d(5,5,3,stride=2, padding = 0)
         self.conv4 = nn.Conv2d(5,8,3,stride=2, padding = 0)
 
-        self.bottle1 = Bottleneck(8,2,8,2)
-        self.bottle2 = Bottleneck(8,2,8,2)
-        self.bottle3 = Bottleneck(8,2,8,2)
-        self.bottle4 = Bottleneck(8,2,8,2)
-        self.bottle5 = Bottleneck(8,2,8,2)
-        self.bottle6 = Bottleneck(8,2,8,2)
-        self.bottle7 = Bottleneck(8,2,5,2)
+
+        self.bottlenecks = nn.ModuleList()
+        for _ in range(nr_bottlenecks):
+            self.bottlenecks.append(Bottleneck(8,2,8,2))
+
+        # self.bottle1 = Bottleneck(8,2,8,2)
+        # self.bottle2 = Bottleneck(8,2,8,2)
+        # self.bottle3 = Bottleneck(8,2,8,2)
+        # self.bottle4 = Bottleneck(8,2,8,2)
+        # self.bottle5 = Bottleneck(8,2,8,2)
+        # self.bottle6 = Bottleneck(8,2,8,2)
+        # self.bottle7 = Bottleneck(8,2,5,2)
 
         self.conv5 = nn.Conv2d(5,1,3,stride=2, padding = 0)
 
@@ -82,20 +87,22 @@ class LightNet(nn.Module):
         out = self.conv4(out)
         out = self.relu(out)
         
-        out = self.bottle1(out)
-        out = self.bottle2(out)
-        out = self.bottle3(out)
-        out = self.bottle4(out)
-        out = self.bottle5(out)
-        out = self.bottle6(out)
-        out = self.bottle7(out)
+        for i in range(len(self.bottlenecks)):
+            out = self.bottlenecks[i](out)
+
+        # out = self.bottle1(out)
+        # out = self.bottle2(out)
+        # out = self.bottle3(out)
+        # out = self.bottle4(out)
+        # out = self.bottle5(out)
+        # out = self.bottle6(out)
+        # out = self.bottle7(out)
 
         out = self.conv5(out)
         out = self.relu(out)
         out = self.fc(out)
         out = self.sm(out)
         
-
         return out
     
 
