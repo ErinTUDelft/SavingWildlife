@@ -1,6 +1,8 @@
 import folium
 import pandas as p
 import json
+import pickle
+
 '''DATA EXPLANATION:
 
 {
@@ -79,15 +81,24 @@ def show_kenya():
     for location in locations:
         loc_to_coord(location,gps_locations, m_test)
 show_kenya()
-print(locations_kenya)
-def save_kenya(source_ims, location_list, file):
+# print(locations_kenya)
+def generate_kenya_df(source_ims, location_list, file):
     df = p.read_json(file).transpose()
-    print(df.head())
-    for location in location_list:
-        location 
+
+    with open(source_ims) as data_file:    
+      data = json.load(data_file) 
+    df_test = p.json_normalize(data, 'images')
+    print(df_test.info())
+
+    df_kenya = df_test[df_test['location'].isin(location_list)].copy()
+    return df_kenya
 
 
-save_kenya(test_images_info, locations_kenya, gps_locations)
+
+
+df_kenya = generate_kenya_df(test_images_info, locations_kenya, gps_locations)
+df_kenya.to_pickle("./kenya_information.pkl")
+print(df_kenya.info())
 m.save("footprint.html")
 m_test.save('test_locations.html')
 m_kenya.save('Kenya.html')
