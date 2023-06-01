@@ -15,8 +15,8 @@ from torchvision import datasets
 
 
 ### import modules from other files ###
-from architecture import WildLifeModel
-from optimizing import BoundingBoxLoss, CrossEntropyLoss, create_optimizer
+from z_architecture import WildLifeModel
+from z_optimizing import BoundingBoxLoss, CrossEntropyLoss, create_optimizer
 
 ## inputs variables ##
 num_epochs = 10
