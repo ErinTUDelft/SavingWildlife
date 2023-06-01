@@ -80,7 +80,7 @@ transformed_dataset = KenyaDataset(
     transform=transform,
 )
 
-dataloader = DataLoader(transformed_dataset, batch_size=1, shuffle=True)
+dataloader = DataLoader(transformed_dataset, batch_size=4, shuffle=True)
 # print(next(iter(dataloader)))
 
 

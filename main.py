@@ -26,7 +26,6 @@
 import torch
 import torch.optim as optim
 import torch.nn as nn
-import numpy as np
 
 import torchvision
 import torchvision.transforms as transforms
@@ -46,22 +45,28 @@ epochs = 10
 #########
 
 ######### Create the model
+
 # Load the model
 model = torchvision.models.mobilenet_v3_small(
     pretrained=True
 )  # pretrained will become deprecated in the future
+
 # modify the last layer
 model.classifier[3] = torch.nn.Linear(in_features=1024, out_features=classes, bias=True)
+
 # freeze all layers
 for param in model.parameters():
     param.requires_grad = False
+
 # unfreeze the last layer
 for param in model.classifier[3].parameters():
     param.requires_grad = True
+
 #########
 
-# # loss function
+# loss function
 criterion = nn.CrossEntropyLoss()
+
 # optimizer
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
@@ -69,7 +74,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 train_loader = dataloader
 test_loader = []
 
-loss = criterion(torch.tensor([1.0]), torch.tensor([1.0]))
+# loss = criterion(torch.tensor([1.0]), torch.tensor([1.0]))
 # print('loss58', loss)
 
 ######### Training
@@ -77,7 +82,7 @@ loss = criterion(torch.tensor([1.0]), torch.tensor([1.0]))
 
 # Y_pred_good = torch.tensor[2.1, 1.0, 2.1]
 # print(model)
-# labels = torch.tensor([1,0,1,0])
+labels = torch.tensor([1, 0, 1, 0])
 # Y = torch.tensor([2,0,1])
 
 
@@ -116,7 +121,7 @@ def train(model, criterion, optimizer, train_loader):
         inputs = data["image"]
         labels = data["landmarks"]["max_detection_conf"]
 
-        print("labels", labels)
+        # print("labels", labels)          ### modified
 
         if labels == ["0.0"]:
             # labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) # target of cross-enropy loss should be class index
@@ -127,12 +132,13 @@ def train(model, criterion, optimizer, train_loader):
 
             # labels is random tensor with batch size 4
 
-        print("labels", labels)
+        print("labels", labels)  ### modified
 
-        print("shape", labels.size())
+        print("shape", labels.size())  ### modified
+
         # unsqueeze the labels
-        labels1 = labels  # .unsqueeze(0)
-        print("labels", labels1)
+        labels1 = labels
+        # print("labels", labels1)
         # zero the parameter gradients
         optimizer.zero_grad()
 
@@ -140,7 +146,7 @@ def train(model, criterion, optimizer, train_loader):
         outputs = model(inputs)
 
         print("outputs", outputs)
-        print(outputs.size())
+        print(outputs.size())  ### modified
 
         loss = criterion(outputs, labels1)
         loss.backward()
@@ -200,13 +206,11 @@ print(train_loader)
 for epoch in tqdm(range(epochs)):  # loop over the dataset multiple times
     # Train on data
     train_loss, train_acc = train(model, criterion, optimizer, train_loader)
-
     # Test on data
     # test_loss, test_acc = test(test_loader, model, criterion)
-
-    # Print training results
-    print(
-        "Epoch: {}, Train Loss: {}, Train Acc: {}".format(epoch, train_loss, train_acc)
-    )
     # Print results
-    # print('Epoch: {}, Train Loss: {}, Train Acc: {}, Test Loss: {}, Test Acc: {}'.format(epoch, train_loss, train_acc, test_loss, test_acc))
+    print(
+        "Epoch: {}, Train Loss: {}, Train Acc: {}, Test Loss: {}, Test Acc: {}".format(
+            epoch, train_loss, train_acc, test_loss, test_acc
+        )
+    )
