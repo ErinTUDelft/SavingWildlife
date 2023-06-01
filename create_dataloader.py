@@ -1,6 +1,15 @@
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 import torch
+from torchvision import transforms
+
+transform = transforms.Compose([
+    # you can add other transformations in this list
+    #transforms.Grayscale(),
+    transforms.Resize((240,240)),
+    transforms.ToTensor()
+    
+])
 
 import json
 import pandas as pd
@@ -9,12 +18,6 @@ import os
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
-
-# data = json.load(open('iwildcam2022_mdv4_detections.json'))
-# bounding_frame = pd.DataFrame(data['images'])
-
-# print(df.head())
-# print(bounding_frame.info())
 
 class KenyaDataset(Dataset):
     '''Dataset with wildlife images from the iWildLife competition.
@@ -30,6 +33,7 @@ class KenyaDataset(Dataset):
                 on a sample.
         """
         self.labels = pd.read_csv(csv_file)
+        # print(self.labels.info())
         self.root_dir = root_dir
         self.transform = transform
 
@@ -40,31 +44,53 @@ class KenyaDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        print(self.labels.iloc[idx, 1])
+        #print(self.labels.iloc[idx, 1])
         img_name = os.path.join(self.root_dir,
                                 self.labels.iloc[idx, 1])
         
         image = Image.open(img_name)
-        landmarks = self.labels.iloc[idx, 2:]
+        landmarks = self.labels.iloc[idx, 2:].to_dict()
         # landmarks = np.array([landmarks])
         # landmarks = landmarks.astype('float').reshape(-1, 2)
-        sample = {'image': image, 'landmarks': landmarks}
+        
 
         if self.transform:
-            sample = self.transform(sample)
+            # print(sample['image'])
+            image = self.transform(image)
 
+        sample = {'image': image, 'landmarks': landmarks}
         return sample
     
 
-kenya_dataset = KenyaDataset('kenya_labels.csv', 'kenya_ims')
-print(len(kenya_dataset))
-sample = kenya_dataset[2]['image']
-plt.imshow(sample)
-plt.show()
 
-transformed_dataset = KenyaDataset(csv_file='kenya_labels.csv',
-                                           root_dir='kenya_ims',
-                                           transform=None
+kenya_dataset = KenyaDataset('/home/erin/Code/Q4/WildlifeData/kenya_labels.csv', '/home/erin/Code/Q4/WildlifeData/kenya_ims', transform=transform)
+# print(len(kenya_dataset))
+sample = kenya_dataset[3]['image']
+# print(kenya_dataset[3]['landmarks'].value())
+# plt.imshow(sample)
+# plt.show()
+
+transformed_dataset = KenyaDataset(csv_file='/home/erin/Code/Q4/WildlifeData/kenya_labels.csv',
+                                           root_dir='/home/erin/Code/Q4/WildlifeData/kenya_ims',
+                                           transform=transform
                                            )
-dataloader = DataLoader(transformed_dataset, batch_size=4,
-                        shuffle=True, num_workers=0)
+
+dataloader = DataLoader(transformed_dataset, batch_size=1,
+                        shuffle=True)
+print(next(iter(dataloader)))
+
+
+# for data in dataloader:
+#     images = data['image']
+#     labels = data['landmarks']['max_detection_conf']
+#     #print(labels)
+#     if labels == ['0.0']:
+#         print(labels)
+#     print(data.keys())
+#     print(images)
+#     print(labels)
+# 
+
+
+
+
