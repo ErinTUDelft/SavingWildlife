@@ -69,7 +69,26 @@ test_loader = []
 
 ######### Training 
 
+
+
+#Y_pred_good = torch.tensor[2.1, 1.0, 2.1]
 #print(model)
+labels = torch.tensor([1,0,1,0])
+#Y = torch.tensor([2,0,1])
+
+
+# Y = torch.tensor([2,0,1,1])
+# print('Y', Y)
+# print('Y.size', Y.size())
+# Y_pred_good = torch.tensor([[0.1, 1.0, 2.1], [0.1, 1.0, 2.1], [0.1, 1.0, 2.1], [0.1, 1.0, 2.1]])
+# #Y_pred_good = torch.tensor([[2.1, 1.0, 2.1], [1.1, 1.0, 2.1], [2.1, 1.0, 2.1]])
+# #[0.1, 1.0, 2.1]]
+# print(Y_pred_good)
+# print('shape', Y_pred_good.size())
+
+#l1 = criterion(Y_pred_good, Y)
+
+#print('l1', l1)
 
 def train(model, criterion, optimizer, train_loader):
     """ 
@@ -92,12 +111,18 @@ def train(model, criterion, optimizer, train_loader):
         inputs = data['image']
         labels = data['landmarks']['max_detection_conf']
 
+        print('labels', labels)
+
         if labels == ['0.0']: 
-            labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) # target of cross-enropy loss should be class index
+            #labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) # target of cross-enropy loss should be class index
+            labels = torch.tensor([1,0])
         else:
-            labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) 
+            #labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) 
+            labels = torch.tensor([1,0,1,0])
             
             # labels is random tensor with batch size 4
+
+        print('labels', labels)
 
         print('shape', labels.size())
         # unsqueeze the labels
@@ -108,9 +133,11 @@ def train(model, criterion, optimizer, train_loader):
 
         # forward + backward + optimize
         outputs = model(inputs)
+       
         print('outputs' , outputs)
+        print(outputs.size())
 
-        loss = criterion(inputs, labels1)
+        loss = criterion(outputs, labels1)
         loss.backward()
         optimizer.step()
 
