@@ -1,5 +1,8 @@
 ## ToDO:
 """
+- fix labels
+- findng out required data type (rgb or greyscale)
+- need to normalize the input
 """
 
 ## Future Improvements
@@ -10,6 +13,14 @@
 - adding data augmentation (flipping, noise)
 - cropping the watermark
 - adding regularization
+"""
+
+## Questions
+"""
+- is the watermark a problem?
+- is using the bounding bos for classification smart?   
+- is the last linear layer indeed the right thing to do?
+- how to fix the crossenthropy loss?
 """
 ## Import modules
 import torch
@@ -27,13 +38,13 @@ from create_dataloader import dataloader
 #from optimizing import create_optimizer, BoundingBoxLoss, CrossEntropyLoss
 
 ######### Definitions
-classes = 2
+classes = 2 # no humans nor vehicles in the dataset
 epochs = 10
 #########
 
 ######### Create the model
 # Load the model
-model = torchvision.models.mobilenet_v3_small(pretrained=True)
+model = torchvision.models.mobilenet_v3_small(pretrained=True) #pretrained will become deprecated in the future
 # modify the last layer
 model.classifier[3] = torch.nn.Linear(in_features=1024, out_features= classes, bias=True)
 # freeze all layers 
@@ -53,10 +64,12 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 train_loader = dataloader
 test_loader = []
 
-loss = criterion(torch.tensor([1.0]), torch.tensor([1.0]))
-print('loss58', loss)
+#loss = criterion(torch.tensor([1.0]), torch.tensor([1.0]))
+#print('loss58', loss)
 
 ######### Training 
+
+#print(model)
 
 def train(model, criterion, optimizer, train_loader):
     """ 
@@ -73,23 +86,34 @@ def train(model, criterion, optimizer, train_loader):
     
     #for batch, data in enumerate(train_loader):
     #print(train_loader)
+    model.train()
     for data in train_loader:
         #inputs, labels = data
         inputs = data['image']
         labels = data['landmarks']['max_detection_conf']
 
+        if labels == ['0.0']: 
+            labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) # target of cross-enropy loss should be class index
+        else:
+            labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) 
+            
+            # labels is random tensor with batch size 4
+
+        print('shape', labels.size())
+        # unsqueeze the labels
+        labels1 = labels #.unsqueeze(0)
+        print('labels' , labels1)
         # zero the parameter gradients
         optimizer.zero_grad()
 
         # forward + backward + optimize
         outputs = model(inputs)
+        print('outputs' , outputs)
 
-        labels = torch.tensor([[1],[2]])
-        loss = criterion(outputs, labels)
+        loss = criterion(inputs, labels1)
         loss.backward()
         optimizer.step()
 
-        labels = np.array([1,2])
         
         avg_loss += loss
         _, predicted = torch.max(outputs.data, 1)
@@ -113,6 +137,7 @@ def test(test_loader, model, criterion):
     correct = 0
     total = 0
     
+    model.eval()
     # Use torch.no_grad to skip gradient calculation, not needed for evaluation
     with torch.no_grad():
         # iterate through batches
@@ -120,7 +145,7 @@ def test(test_loader, model, criterion):
             # get the inputs; data is a list of [inputs, labels]
             
             inputs = data['image']
-            labels = data['landmarks']
+            labels = data['landmarks']['max_detection_conf']
 
             # forward pass
             outputs = model(inputs)
