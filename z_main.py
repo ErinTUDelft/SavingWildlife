@@ -68,35 +68,35 @@ print(labels.shape)
 
 # ##### optimizing model parameters: loss & optimizer ######
 
-# # Define the loss function and optimizer
-# bounding_box_loss_fn = BoundingBoxLoss()
-# classification_loss_fn = CrossEntropyLoss()
-# optimizer = create_optimizer(model)
+# Define the loss function and optimizer
+bounding_box_loss_fn = BoundingBoxLoss()
+classification_loss_fn = CrossEntropyLoss()
+optimizer = create_optimizer(model)
 
-# # Define the input and target data
-# x_train = torch.Tensor(...)  # Your input data
-# y_train_bounding_box = torch.Tensor(...)  # Your bounding box labels
-# y_train_classification = torch.Tensor(...)  # Your classification labels
+# Define the input and target data
+x_train = torch.Tensor(...)  # Your input data
+y_train_bounding_box = torch.Tensor(...)  # Your bounding box labels
+y_train_classification = torch.Tensor(...)  # Your classification labels
 
 
 # ##### training loop ######
 
-# for epoch in range(num_epochs):
-#     optimizer.zero_grad()
+for epoch in range(num_epochs):
+    optimizer.zero_grad()
 
-#     # Forward pass
-#     y_pred_bounding_box, y_pred_classification = model(x_train)
+    # Forward pass
+    y_pred_bounding_box, y_pred_classification = model(x_train)
 
-#     # Compute losses
-#     bounding_box_loss = bounding_box_loss_fn(y_train_bounding_box, y_pred_bounding_box)
-#     classification_loss = classification_loss_fn(y_train_classification, y_pred_classification)
+    # Compute losses
+    bounding_box_loss = bounding_box_loss_fn(y_train_bounding_box, y_pred_bounding_box)
+    classification_loss = classification_loss_fn(y_train_classification, y_pred_classification)
 
-#     # Total loss
-#     total_loss = bounding_box_loss + classification_loss
+    # Total loss
+    total_loss = bounding_box_loss + classification_loss
 
-#     # Backward pass
-#     total_loss.backward()
-#     optimizer.step()
+    # Backward pass
+    total_loss.backward()
+    optimizer.step()
 
 
 ##### test loop ######

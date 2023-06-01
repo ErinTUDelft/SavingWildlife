@@ -14,7 +14,6 @@ transforms = torch.nn.Sequential(
 
 # load model
 mobileNetV2 = mobilenet_v2(weights=MobileNet_V2_Weights.IMAGENET1K_V1)
-print(mobileNetV2)
 
 
 # transfer learning class
