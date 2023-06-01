@@ -26,6 +26,7 @@
 import torch
 import torch.optim as optim
 import torch.nn as nn
+import numpy as np
 
 import torchvision
 import torchvision.transforms as transforms
@@ -59,7 +60,7 @@ for param in model.classifier[3].parameters():
     param.requires_grad = True
 #########
 
-# loss function
+# # loss function
 criterion = nn.CrossEntropyLoss()
 # optimizer
 optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -69,7 +70,7 @@ train_loader = dataloader
 test_loader = []
 
 loss = criterion(torch.tensor([1.0]), torch.tensor([1.0]))
-print('loss58', loss)
+# print('loss58', loss)
 
 ######### Training
 
