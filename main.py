@@ -1,6 +1,5 @@
 ## ToDO:
 """
-- fix labels
 - findng out required data type (rgb or greyscale)
 - need to normalize the input
 """
@@ -34,7 +33,9 @@ import torchvision.transforms as transforms
 from tqdm import tqdm # progress bar
 
 # Import from project
-from create_dataloader import dataloader
+from create_dataloader import dataloader_train, dataloader_test
+
+
 #from optimizing import create_optimizer, BoundingBoxLoss, CrossEntropyLoss
 
 ######### Definitions
@@ -61,34 +62,9 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 # Create dataloader from the training and test set 
-train_loader = dataloader
-test_loader = []
+train_loader = dataloader_train
+test_loader = dataloader_test
 
-#loss = criterion(torch.tensor([1.0]), torch.tensor([1.0]))
-#print('loss58', loss)
-
-######### Training 
-
-
-
-#Y_pred_good = torch.tensor[2.1, 1.0, 2.1]
-#print(model)
-labels = torch.tensor([1,0,1,0])
-#Y = torch.tensor([2,0,1])
-
-
-# Y = torch.tensor([2,0,1,1])
-# print('Y', Y)
-# print('Y.size', Y.size())
-# Y_pred_good = torch.tensor([[0.1, 1.0, 2.1], [0.1, 1.0, 2.1], [0.1, 1.0, 2.1], [0.1, 1.0, 2.1]])
-# #Y_pred_good = torch.tensor([[2.1, 1.0, 2.1], [1.1, 1.0, 2.1], [2.1, 1.0, 2.1]])
-# #[0.1, 1.0, 2.1]]
-# print(Y_pred_good)
-# print('shape', Y_pred_good.size())
-
-#l1 = criterion(Y_pred_good, Y)
-
-#print('l1', l1)
 
 def train(model, criterion, optimizer, train_loader):
     """ 
@@ -102,52 +78,70 @@ def train(model, criterion, optimizer, train_loader):
     avg_loss = 0
     correct = 0
     total = 0
-    
-    #for batch, data in enumerate(train_loader):
-    #print(train_loader)
-    model.train()
+
+
+    model.train() # apparently good practice to do
     for data in train_loader:
         #inputs, labels = data
         inputs = data['image']
+
+        #print('image', inputs)
         labels = data['landmarks']['max_detection_conf']
 
-        print('labels', labels)
+        converted_labels = []
 
-        if labels == ['0.0']: 
-            #labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) # target of cross-enropy loss should be class index
-            labels = torch.tensor([1,0])
-        else:
-            #labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) 
-            labels = torch.tensor([1,0,1,0])
-            
-            # labels is random tensor with batch size 4
+        for label in labels:
 
-        print('labels', labels)
+            #print('labels', label)
+            #print(label.shape())
 
-        print('shape', labels.size())
-        # unsqueeze the labels
-        labels1 = labels #.unsqueeze(0)
-        print('labels' , labels1)
-        # zero the parameter gradients
+
+            if label == '0.0': 
+                #labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) # target of cross-enropy loss should be class index
+                labels = torch.tensor([0])
+                converted_labels.append(0)
+            else:
+                #labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) 
+                labels = torch.tensor([1])
+                converted_labels.append(1)
+
+        
+
+        labels= torch.LongTensor(converted_labels)
+    
+        # zero the parameter gradients (VERY important; otherwise gradients accumulate)
         optimizer.zero_grad()
 
         # forward + backward + optimize
         outputs = model(inputs)
-       
-        print('outputs' , outputs)
-        print(outputs.size())
-
-        loss = criterion(outputs, labels1)
+        loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
-
         
+        # print('new block')
+        # print('labels', labels)
+        # print('outputs129:', outputs)
+        # print('loss130', loss)
+        # print('outputs.data', outputs.data)
+
         avg_loss += loss
         _, predicted = torch.max(outputs.data, 1)
-        #total += labels.size(0)
-        total = 2
-        #correct += (predicted == labels).sum().item()
-        correct = 1
+
+
+        # print('predicted', predicted)
+        # print('groundtru', labels)
+        total += labels.size(0)
+       
+        correct += (predicted == labels).sum().item()
+
+        if total%320 == 0:
+            print(total)
+        
+        if total > 15000:
+            return avg_loss/len(train_loader), 100 * correct / total
+
+        
+        
 
     return avg_loss/len(train_loader), 100 * correct / total
         
@@ -174,27 +168,53 @@ def test(test_loader, model, criterion):
             inputs = data['image']
             labels = data['landmarks']['max_detection_conf']
 
+            converted_labels = []
+
+            for label in labels:
+                if label == '0.0': 
+                    #labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) # target of cross-enropy loss should be class index
+                    labels = torch.tensor([0])
+                    converted_labels.append(0)
+                else:
+                    #labels = torch.tensor([[1, 0],[1, 0] ,[1, 0] ,[1, 0]]) 
+                    labels = torch.tensor([1])
+                    converted_labels.append(1)
+
+            labels= torch.LongTensor(converted_labels)
+
             # forward pass
             outputs = model(inputs)
            
             loss = criterion(outputs, labels)
-            labels2 = np.array([1,2])
+     
+
             # keep track of loss and accuracy
             avg_loss += loss
             _, predicted = torch.max(outputs.data, 1)
-            total += labels2.size(0)
+            total += labels.size(0)
             
             correct += (predicted == labels).sum().item()
+
+            if total%160 == 0:
+                print(total)
+
+            if total > 3000:
+                return avg_loss/len(test_loader), 100 * correct / total
+
 
     return avg_loss/len(test_loader), 100 * correct / total
 
 print(train_loader)
 
 # Train the network
+j = 0
 for epoch in tqdm(range(epochs)):  # loop over the dataset multiple times
+    print('j', j)
+    j +=1
+
     # Train on data
     train_loss, train_acc = train(model, criterion, optimizer, train_loader)
     # Test on data
-    #test_loss, test_acc = test(test_loader, model, criterion)
+    test_loss, test_acc = test(test_loader, model, criterion)
     # Print results
     print('Epoch: {}, Train Loss: {}, Train Acc: {}, Test Loss: {}, Test Acc: {}'.format(epoch, train_loss, train_acc, test_loss, test_acc))
