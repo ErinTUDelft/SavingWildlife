@@ -1,4 +1,4 @@
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms, utils
 import torch
 from torchvision import transforms
@@ -75,21 +75,30 @@ transformed_dataset = KenyaDataset(csv_file='/home/erin/Code/Q4/WildlifeData/ken
                                            transform=transform
                                            )
 
-dataloader = DataLoader(transformed_dataset, batch_size=1,
+print(len(transformed_dataset))
+
+dataloader = DataLoader(transformed_dataset, batch_size=32,
                         shuffle=True)
-print(next(iter(dataloader)))
+
+print(len(dataloader))
+dataset_size = len(transformed_dataset)
+train_size = int(0.9 * dataset_size)  # 80% for training, adjust as needed
+test_size = dataset_size - train_size
+
+train_dataset, test_dataset = random_split(transformed_dataset, [train_size, test_size])
 
 
-# for data in dataloader:
-#     images = data['image']
-#     labels = data['landmarks']['max_detection_conf']
-#     #print(labels)
-#     if labels == ['0.0']:
-#         print(labels)
-#     print(data.keys())
-#     print(images)
-#     print(labels)
-# 
+
+dataloader_train = DataLoader(train_dataset, batch_size=32,
+                        shuffle=True)
+
+print(dataloader_train)
+
+dataloader_test = DataLoader(test_dataset, batch_size=32,
+                        shuffle=True)
+
+
+
 
 
 
