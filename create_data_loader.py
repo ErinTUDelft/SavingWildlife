@@ -51,9 +51,10 @@ class KenyaDataset(Dataset):
         img_name = os.path.join(self.root_dir, self.labels.iloc[idx, 1])
 
         image = Image.open(img_name)
-        landmarks = self.labels.iloc[idx, 2:].to_dict()
+        landmarks = self.labels.iloc[idx, 2:].to_dict()  #### modified it wat .todict()
+
         # landmarks = np.array([landmarks])
-        # landmarks = landmarks.astype('float').reshape(-1, 2)
+        # landmarks = landmarks.astype("float").reshape(-1, 2)
 
         if self.transform:
             # print(sample['image'])
@@ -80,7 +81,7 @@ transformed_dataset = KenyaDataset(
     transform=transform,
 )
 
-dataloader = DataLoader(transformed_dataset, batch_size=4, shuffle=True)
+dataloader = DataLoader(transformed_dataset, batch_size=1, shuffle=True)
 # print(next(iter(dataloader)))
 
 
