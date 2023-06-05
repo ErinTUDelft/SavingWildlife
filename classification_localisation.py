@@ -2,12 +2,14 @@
 
 ##### import modules ########
 
+
 ## Import modules
 import torch
 import torch.optim as optim
 import torch.nn as nn
 import re
 import json
+from PIL import Image
 
 import torchvision
 import torchvision.transforms as transforms
@@ -52,20 +54,18 @@ class class_local(nn.Module):
         super(class_local, self).__init__()
         self.pretrained_model = pretrained_model
 
+        # classification head
         self.classification_head = nn.Sequential(
             nn.Linear(in_features=1000, out_features=classes, bias=True),
-            nn.ReLU(),
+            nn.Softmax(dim=1),
         )
-
+        # localisation head
         self.regression_head = nn.Sequential(
-            nn.Linear(in_features=1000, out_features=4, bias=True),
             nn.ReLU(),
+            nn.Linear(in_features=1000, out_features=4, bias=True),
         )
 
     def forward(self, x):
-        # x = self.pretrained_model.features(
-        #     x
-        # )
         x = self.pretrained_model(x)
         # .features removes the final layer of the backbone
         y_class = self.classification_head(x)
@@ -90,7 +90,7 @@ criterion_reg = nn.MSELoss()
 
 # optimizer
 optimizer = optim.Adam(
-    filter(lambda p: p.requires_grad, model.parameters()), lr=0.1
+    filter(lambda p: p.requires_grad, model.parameters()), lr=0.001
 )  # only update parameters t
 # that have requires_grad = True
 
@@ -119,10 +119,15 @@ optimizer = optim.Adam(
 # problem for data["landmarks"]["detections"]:  string inside of list contains dictionaries
 
 # dataloader_iterator = iter(dataloader)
+
+
+#########################################################################################
 train_loss = 0.0
 
 model.train()
-for batch_idx, data in tqdm(enumerate(dataloader)):
+# for batch_idx, data in tqdm(enumerate(dataloader)):
+for batch_idx, data in enumerate(dataloader):
+    print("batch_id, ", batch_idx)
     ######## loading inputs and truths ########
     # image
     X = data["image"]
@@ -130,6 +135,8 @@ for batch_idx, data in tqdm(enumerate(dataloader)):
     # classification & localisation truth
 
     # go inside of outer list
+    k_detection = data["landmarks"]
+    print(k_detection)
     key_detection = data["landmarks"]["detections"][0]
 
     # create a parser to find the first dictionary element (string)
@@ -179,7 +186,46 @@ for batch_idx, data in tqdm(enumerate(dataloader)):
     optimizer.step()
     train_loss = train_loss + 1 / (batch_idx + 1) * (loss - train_loss)
     print("train_loss: ", train_loss)
-    # save the model
 
-model_scripted = torch.jit.script(model)  # Export to TorchScript
-model_scripted.save("model_scripted.pt")  # Save
+# save the model
+saved_model = torch.save(model.state_dict(), "saved_model.pt")  # Export to TorchScript
+
+
+#########################################################################################
+
+
+# # # # load saved state from model
+# model_class_local = class_local(back_bone)
+# model_class_local.load_state_dict(torch.load("saved_model.pt"))
+# model_class_local.eval()
+
+
+# ### test an image
+# ##### draw bounding box
+
+# test_image = Image.open("./kenya_ims/8a0a30c6-21bc-11ea-a13a-137349068a90.jpg")
+# transform = transforms.Compose(
+#     [
+#         # you can add other transformations in this list
+#         # transforms.Grayscale(),
+#         transforms.Resize((240, 240)),
+#         transforms.ToTensor(),
+#     ]
+# )
+# test_tensor = transform(test_image)
+# test_tensor = test_tensor.reshape(1, 3, 240, 240)
+
+
+# class_pred, box_pred = model_class_local(test_tensor)
+# print("class_pred: ", class_pred)
+# print("box_pred: ", box_pred)
+
+
+# test_image.show()
+
+# x_left coordinate
+# y_top coordinate
+# x_width bounding box
+# y_heigth bounding box
+
+# x_left = class_pred

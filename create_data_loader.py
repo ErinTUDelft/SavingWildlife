@@ -80,9 +80,18 @@ transformed_dataset = KenyaDataset(
     root_dir="./kenya_ims",
     transform=transform,
 )
+# make a subset of dataset
+# transformed_dataset = torch.utils.data.Subset(kenya_dataset, range(0, 100))
+train_dataset, test_dataset = torch.utils.data.random_split(
+    transformed_dataset, [0.1, 0.9]
+)
 
-dataloader = DataLoader(transformed_dataset, batch_size=1, shuffle=True)
-# print(next(iter(dataloader)))
+# print("length of kenya dataset, ", len(kenya_dataset))
+# print("length of transformed dataset, ", len(transformed_dataset))
+# print("length of train dataset, ", len(train_dataset))
+# print("length of test dataset, ", len(test_dataset))
+
+dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True)
 
 
 # for data in dataloader:

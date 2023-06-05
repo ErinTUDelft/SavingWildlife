@@ -203,7 +203,7 @@ def test(test_loader, model, criterion):
 print(train_loader)
 
 # Train the network
-for epoch in tqdm(range(epochs)):  # loop over the dataset multiple times
+for epoch in range(epochs):  # loop over the dataset multiple times
     # Train on data
     train_loss, train_acc = train(model, criterion, optimizer, train_loader)
     # Test on data
