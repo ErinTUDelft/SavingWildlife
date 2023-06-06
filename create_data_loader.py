@@ -53,15 +53,16 @@ class KenyaDataset(Dataset):
         image = Image.open(img_name)
         landmarks = self.labels.iloc[idx, 2:].to_dict()  #### modified it wat .todict()
 
-        # landmarks = np.array([landmarks])
-        # landmarks = landmarks.astype("float").reshape(-1, 2)
-
         if self.transform:
             # print(sample['image'])
             image = self.transform(image)
 
         sample = {"image": image, "landmarks": landmarks}
+
         return sample
+
+        # landmarks = np.array([landmarks])
+        # landmarks = landmarks.astype("float").reshape(-1, 2)
 
 
 kenya_dataset = KenyaDataset(
@@ -92,15 +93,3 @@ train_dataset, test_dataset = torch.utils.data.random_split(
 # print("length of test dataset, ", len(test_dataset))
 
 dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True)
-
-
-# for data in dataloader:
-#     images = data['image']
-#     labels = data['landmarks']['max_detection_conf']
-#     #print(labels)
-#     if labels == ['0.0']:
-#         print(labels)
-#     print(data.keys())
-#     print(images)
-#     print(labels)
-#

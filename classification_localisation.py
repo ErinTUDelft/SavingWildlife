@@ -7,40 +7,22 @@
 import torch
 import torch.optim as optim
 import torch.nn as nn
-import re
-import json
-from PIL import Image
-
 import torchvision
 import torchvision.transforms as transforms
 
-# from torchvision.models.mobilenetv3 import MobileNet_V3_Small_Weights
-
+import re
+import json
+from PIL import Image
 from tqdm import tqdm  # progress bar
 
 # Import from project
 from create_data_loader import dataloader
-
-# from optimizing import create_optimizer, BoundingBoxLoss, CrossEntropyLoss
 
 
 ######### Definitions
 classes = 2  # no humans nor vehicles in the dataset
 epochs = 10
 #########
-
-
-# ###### model architecture
-
-# # 1. classification head
-# # fully connected layer
-# # relu
-
-# # 2. regression head
-# # fully connected layer
-# # relu
-
-back_bone = torchvision.models.mobilenet_v3_small(pretrained=True)
 
 
 class class_local(nn.Module):
@@ -50,24 +32,36 @@ class class_local(nn.Module):
         nn.Module: initialises the class_local class with nn.Module as parent class
     """
 
-    def __init__(self, pretrained_model):
+    def __init__(self, back_bone):
         super(class_local, self).__init__()
-        self.pretrained_model = pretrained_model
+        self.back1 = nn.Sequential(
+            *nn.ModuleList(back_bone.children())[:-1]
+        )  # out_features 1024
+        self.back2 = back_bone.classifier[0]
 
         # classification head
         self.classification_head = nn.Sequential(
-            nn.Linear(in_features=1000, out_features=classes, bias=True),
+            nn.Linear(in_features=1024, out_features=256, bias=True),
+            nn.ReLU(),
+            nn.Linear(in_features=256, out_features=128, bias=True),
+            nn.ReLU(),
+            nn.Linear(in_features=128, out_features=classes, bias=True),
             nn.Softmax(dim=1),
         )
         # localisation head
         self.regression_head = nn.Sequential(
+            nn.Linear(in_features=1024, out_features=256, bias=True),
             nn.ReLU(),
-            nn.Linear(in_features=1000, out_features=4, bias=True),
+            nn.Linear(in_features=256, out_features=128, bias=True),
+            nn.ReLU(),
+            nn.Linear(in_features=128, out_features=4, bias=True),
+            nn.Sigmoid(),
         )
 
     def forward(self, x):
-        x = self.pretrained_model(x)
-        # .features removes the final layer of the backbone
+        x = self.back1(x)
+        x = x.view(x.size(0), -1)
+        x = self.back2(x)
         y_class = self.classification_head(x)
         y_reg = self.regression_head(x)
 
@@ -76,156 +70,104 @@ class class_local(nn.Module):
 
 #### model and device
 
-# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-model = class_local(back_bone)  # .to(device)
-model.pretrained_model.requires_grad_ = False
+back_bone = torchvision.models.mobilenet_v3_small(pretrained=True)
+model = class_local(back_bone)
+model.back1.requires_grad_ = False
+model.back2.requires_grad_ = False
 
-#### loss function & optimizer
 
-# classification loss -> cross entropy loss between the predicted logits and the true labels (softmax)
-criterion_class = nn.CrossEntropyLoss()
+# #### loss function & optimizer
 
-# regression loss -> mean squared error loss between the predicted values and the true regression targets
-criterion_reg = nn.MSELoss()
+# classification loss
+criterion_class = (
+    nn.CrossEntropyLoss()
+)  # cross entropy loss between the predicted logits and the true labels (softmax)
+
+# regression loss
+criterion_reg = (
+    nn.MSELoss()
+)  # mean squared error loss between the predicted values and the true regression targets
 
 # optimizer
 optimizer = optim.Adam(
     filter(lambda p: p.requires_grad, model.parameters()), lr=0.001
-)  # only update parameters t
-# that have requires_grad = True
+)  # only update parameters that have requires_grad = True
 
-##### input description
+# ##########################################################################################
 
-# # X train input
-# # Y1 classification head (truth)
-# # Y2 regression head (truth)
+# ##### input description
 
-#### description of the data
-# 2 classes: animals (category 1) and background (category 2)
+# # # X train input
+# # # Y1 classification head (truth)
+# # # Y2 regression head (truth)
 
-# for animals the bounding box is given by the values inside bbox
-# for background the bounding box is set to the image size "bbox": [0.5,0.5,1,1]
-# 0.5,0.5 -> center of the image
-# 1st value x coordinate from the top left corner
-# 2nd value y coordinate from the top left corner
-# 1,1 -> width and height of the image
+# #### description of the data
+# # 2 classes: animals (category 1) and background (category 2)
 
-
-##### training
-# def train(model, train_loader, optimizer, criterion_class,cirterion_reg):
+# # for animals the bounding box is given by the values inside bbox
+# # for background the bounding box is set to the image size "bbox": [0.5,0.5,1,1]
+# # 0.5,0.5 -> center of the image
+# # 1st value x coordinate from the top left corner
+# # 2nd value y coordinate from the top left corner
+# # 1,1 -> width and height of the image
 
 
-# goal retrieve the first detection from the list of detections
-# problem for data["landmarks"]["detections"]:  string inside of list contains dictionaries
+# #########################################################################################
+# training
 
-# dataloader_iterator = iter(dataloader)
+# train_loss = 0.0
 
+# model.train()
+# for batch_idx, data in enumerate(dataloader):
+#     print("batch_idx ", batch_idx)
+#     X = data["image"]
 
-#########################################################################################
-train_loss = 0.0
+#     #########################################
+#     # getting truths
 
-model.train()
-# for batch_idx, data in tqdm(enumerate(dataloader)):
-for batch_idx, data in enumerate(dataloader):
-    print("batch_id, ", batch_idx)
-    ######## loading inputs and truths ########
-    # image
-    X = data["image"]
+#     key_detection = data["landmarks"]["detections"][0]  # getting
+#     pattern = r"\{[^{}]+\}"
+#     match = re.search(pattern, key_detection)
 
-    # classification & localisation truth
+#     if match != None:
+#         ind_start = match.start()
+#         ind_end = match.end()
 
-    # go inside of outer list
-    k_detection = data["landmarks"]
-    print(k_detection)
-    key_detection = data["landmarks"]["detections"][0]
+#         # convert string to dictionary
+#         key_detection = json.loads(
+#             key_detection[ind_start:ind_end].replace("'", '"')
+#         )  # json loader can not parse single quotes
 
-    # create a parser to find the first dictionary element (string)
-    pattern = r"\{[^{}]+\}"
-    match = re.search(pattern, key_detection)
+#         Y_class = torch.tensor([[1.0, 0.0]])
+#         Y_reg = torch.tensor(key_detection["bbox"]).reshape(1, 4)
 
-    if match != None:
-        ind_start = match.start()
-        ind_end = match.end()
+#     else:
+#         # no detection -> background
+#         Y_class = torch.tensor([[0.0, 1.0]])
+#         Y_reg = torch.tensor([0.5, 0.5, 1, 1]).reshape(1, 4)
 
-        # convert string to dictionary
-        key_detection = json.loads(
-            key_detection[ind_start:ind_end].replace("'", '"')
-        )  # json loader can not parse single quotes
+#     ##########################################
 
-        # Y_class = torch.tensor(key_detection["conf"])
-        Y_class = torch.tensor([[1.0, 0.0]])
-        Y_reg = torch.tensor(key_detection["bbox"]).reshape(1, 4)
+#     # forward pass
+#     optimizer.zero_grad()
 
-    else:
-        # no detection -> background
-        Y_class = torch.tensor([[0.0, 1.0]])
-        Y_reg = torch.tensor([0.5, 0.5, 1, 1]).reshape(1, 4)
+#     output_class, output_reg = model(X)
 
-    # print(Y_class, Y_reg)
-    ##########################################
+#     # calculate loss
+#     loss_class = criterion_class(output_class, Y_class)
+#     loss_reg = criterion_reg(output_reg, Y_reg)
+#     # print("loss_class, ", loss_class)
+#     # print("loss_reg, ", loss_reg)
 
-    ##### forward pass
+#     loss = loss_class + loss_reg
 
-    optimizer.zero_grad()
+#     # backpropagation
+#     loss.backward()
 
-    output_class, output_reg = model(X)
-    # print("output_class: ", output_class)
-    # print("output_reg: ", output_reg)
-
-    # calculate loss
-    loss_class = criterion_class(output_class, Y_class)
-    loss_reg = criterion_reg(output_reg, Y_reg)
-
-    # total training loss
-    loss = loss_class + loss_reg
-
-    # backpropagation
-    loss.backward()
-
-    # gradients
-    optimizer.step()
-    train_loss = train_loss + 1 / (batch_idx + 1) * (loss - train_loss)
-    print("train_loss: ", train_loss)
+#     # gradients
+#     optimizer.step()
+#     train_loss = train_loss + 1 / (batch_idx + 1) * (loss - train_loss)
+#     print("train_loss: ", train_loss)
 
 # save the model
 saved_model = torch.save(model.state_dict(), "saved_model.pt")  # Export to TorchScript
-
-
-#########################################################################################
-
-
-# # # # load saved state from model
-# model_class_local = class_local(back_bone)
-# model_class_local.load_state_dict(torch.load("saved_model.pt"))
-# model_class_local.eval()
-
-
-# ### test an image
-# ##### draw bounding box
-
-# test_image = Image.open("./kenya_ims/8a0a30c6-21bc-11ea-a13a-137349068a90.jpg")
-# transform = transforms.Compose(
-#     [
-#         # you can add other transformations in this list
-#         # transforms.Grayscale(),
-#         transforms.Resize((240, 240)),
-#         transforms.ToTensor(),
-#     ]
-# )
-# test_tensor = transform(test_image)
-# test_tensor = test_tensor.reshape(1, 3, 240, 240)
-
-
-# class_pred, box_pred = model_class_local(test_tensor)
-# print("class_pred: ", class_pred)
-# print("box_pred: ", box_pred)
-
-
-# test_image.show()
-
-# x_left coordinate
-# y_top coordinate
-# x_width bounding box
-# y_heigth bounding box
-
-# x_left = class_pred

@@ -74,30 +74,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 train_loader = dataloader
 test_loader = []
 
-# loss = criterion(torch.tensor([1.0]), torch.tensor([1.0]))
-# print('loss58', loss)
-
 ######### Training
-
-
-# Y_pred_good = torch.tensor[2.1, 1.0, 2.1]
-# print(model)
-labels = torch.tensor([1, 0, 1, 0])
-# Y = torch.tensor([2,0,1])
-
-
-# Y = torch.tensor([2,0,1,1])
-# print('Y', Y)
-# print('Y.size', Y.size())
-# Y_pred_good = torch.tensor([[0.1, 1.0, 2.1], [0.1, 1.0, 2.1], [0.1, 1.0, 2.1], [0.1, 1.0, 2.1]])
-# #Y_pred_good = torch.tensor([[2.1, 1.0, 2.1], [1.1, 1.0, 2.1], [2.1, 1.0, 2.1]])
-# #[0.1, 1.0, 2.1]]
-# print(Y_pred_good)
-# print('shape', Y_pred_good.size())
-
-# l1 = criterion(Y_pred_good, Y)
-
-# print('l1', l1)
 
 
 def train(model, criterion, optimizer, train_loader):
