@@ -71,7 +71,7 @@ kenya_dataset = KenyaDataset(
     transform=transform,
 )
 # print(len(kenya_dataset))
-sample = kenya_dataset[3]["image"]
+# sample = kenya_dataset[3]["image"]
 # print(kenya_dataset[3]['landmarks'].value())
 # plt.imshow(sample)
 # plt.show()
@@ -92,4 +92,5 @@ train_dataset, test_dataset = torch.utils.data.random_split(
 # print("length of train dataset, ", len(train_dataset))
 # print("length of test dataset, ", len(test_dataset))
 
-dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=1, shuffle=True)
