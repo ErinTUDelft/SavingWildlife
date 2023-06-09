@@ -1,4 +1,8 @@
-####### classification & localisation #######
+##############################################################################################################
+# Train classification & localization
+##############################################################################################################
+
+#######  #######
 
 ##### import modules ########
 
@@ -18,7 +22,7 @@ from tqdm import tqdm  # progress bar
 
 # Import from project
 from create_data_loader import train_loader
-
+from network import class_local
 
 ######### Definitions
 classes = 2  # no humans nor vehicles in the dataset
@@ -26,51 +30,7 @@ epochs = 10
 #########
 
 
-class class_local(nn.Module):
-    """classification with localisation neural network
-
-    Args:
-        nn.Module: initialises the class_local class with nn.Module as parent class
-    """
-
-    def __init__(self, back_bone):
-        super(class_local, self).__init__()
-        self.back1 = nn.Sequential(
-            *nn.ModuleList(back_bone.children())[:-1]
-        )  # out_features 1024
-        self.back2 = back_bone.classifier[0]
-
-        # classification head
-        self.classification_head = nn.Sequential(
-            nn.Linear(in_features=1024, out_features=classes, bias=True),
-            # nn.Linear(in_features=1024, out_features=256, bias=True),
-            # nn.ReLU(),
-            # nn.Linear(in_features=256, out_features=128, bias=True),
-            # nn.ReLU(),
-            # nn.Linear(in_features=128, out_features=classes, bias=True),
-            nn.Sigmoid(),
-        )
-        # localisation head
-        self.regression_head = nn.Sequential(
-            nn.Linear(in_features=1024, out_features=4, bias=True),
-            nn.Sigmoid(),
-        )
-        #     nn.Linear(in_features=1024, out_features=256, bias=True),
-        #     nn.ReLU(),
-        #     nn.Linear(in_features=256, out_features=128, bias=True),
-        #     nn.ReLU(),
-        #     nn.Linear(in_features=128, out_features=4, bias=True),
-        #     nn.Sigmoid(),
-        # )
-
-    def forward(self, x):
-        x = self.back1(x)
-        x = x.view(x.size(0), -1)
-        x = self.back2(x)
-        y_class = self.classification_head(x)
-        y_reg = self.regression_head(x)
-
-        return y_class, y_reg
+# #### Create model
 
 
 back_bone = torchvision.models.mobilenet_v3_small(pretrained=True)
@@ -124,17 +84,21 @@ def training(model, dataloader, optimizer, criterion_class, criterion_reg):
 
             Y_class = torch.tensor([[1.0, 0.0]])
             Y_reg = torch.tensor(key_detection["bbox"]).reshape(1, 4)
+            category = "animal"
 
         else:
             # no detection -> background
             Y_class = torch.tensor([[0.0, 1.0]])
             Y_reg = torch.tensor([0.5, 0.5, 1, 1]).reshape(1, 4)
+            category = "background"
         ##########################################
 
         # forward pass
         optimizer.zero_grad()
 
         output_class, output_reg = model(X)
+
+        print("the output class ", output_class[0], "the truth ", category)
         # print(output_class)
         ### checking pictures
 
@@ -156,19 +120,19 @@ def training(model, dataloader, optimizer, criterion_class, criterion_reg):
         optimizer.step()
         train_loss += loss.item()
         avg_loss = train_loss / (batch_idx + 1)
-        print(f"average_loss: {avg_loss}")
+        # print(f"average_loss: {avg_loss}")
 
         # if batch_idx % 100 == 0:
         #     print(f"average_loss: {avg_loss}")
 
         # save the model
 
-    torch.save(model.state_dict(), "saved_model2.pt")  # Export to TorchScript
+    torch.save(model.state_dict(), "saved_model.pt")  # Export to TorchScript
 
     return
 
 
-# training(model, train_loader, optimizer, criterion_class, criterion_reg)
+training(model, train_loader, optimizer, criterion_class, criterion_reg)
 
 
 ##########################################################################################
