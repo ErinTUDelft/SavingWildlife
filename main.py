@@ -21,6 +21,13 @@
 - is the last linear layer indeed the right thing to do?
 - how to fix the crossenthropy loss?
 """
+
+
+# regression
+""" 
+
+
+"""
 ## Import modules
 import torch
 import torch.optim as optim
