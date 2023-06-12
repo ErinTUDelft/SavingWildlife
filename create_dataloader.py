@@ -134,14 +134,14 @@ class KenyaDataset(Dataset):
     
 
 
-kenya_dataset = KenyaDataset('kenya_labels.csv', 'kenya_ims', transform=transform)
+kenya_dataset = KenyaDataset('filtered_kenya_labels.csv', 'kenya_ims', transform=transform)
 # print(len(kenya_dataset))
 sample = kenya_dataset[3]['image']
 # print(kenya_dataset[3]['landmarks'].value())
 # plt.imshow(sample)
 # plt.show()
 
-transformed_dataset = KenyaDataset(csv_file='kenya_labels.csv',
+transformed_dataset = KenyaDataset(csv_file='filtered_kenya_labels.csv',
                                            root_dir='kenya_ims',
                                            transform=transform
                                            )
