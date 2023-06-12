@@ -58,6 +58,7 @@ optimizer = optim.Adam(
 
 def training(model, dataloader, optimizer, criterion_class, criterion_reg):
     train_loss = 0.0
+    correct_pred = 0.0
 
     model.train()
     for batch_idx, data in enumerate(dataloader):
@@ -85,12 +86,14 @@ def training(model, dataloader, optimizer, criterion_class, criterion_reg):
             Y_class = torch.tensor([[1.0, 0.0]])
             Y_reg = torch.tensor(key_detection["bbox"]).reshape(1, 4)
             category = "animal"
+            label = 1
 
         else:
             # no detection -> background
             Y_class = torch.tensor([[0.0, 1.0]])
             Y_reg = torch.tensor([0.5, 0.5, 1, 1]).reshape(1, 4)
             category = "background"
+            label = 0
         ##########################################
 
         # forward pass
@@ -102,7 +105,7 @@ def training(model, dataloader, optimizer, criterion_class, criterion_reg):
         # print(output_class)
         ### checking pictures
 
-        if output_class[0][0] > 0.5:
+        if output_class[0][0] > output_class[0][1]:
             # if animal is closer to the truth than background
             loss = criterion_class(output_class, Y_class) + criterion_reg(
                 output_reg, Y_reg
@@ -120,6 +123,13 @@ def training(model, dataloader, optimizer, criterion_class, criterion_reg):
         optimizer.step()
         train_loss += loss.item()
         avg_loss = train_loss / (batch_idx + 1)
+
+        # evaluate the model
+        # print(" random", output_class[0][0].item())
+        correct_pred += ((torch.argmax(output_class[0]), 1) == label).sum().item()
+        eval_acc = correct_pred / len(dataloader.dataset)
+
+        print(eval_acc)
         # print(f"average_loss: {avg_loss}")
 
         # if batch_idx % 100 == 0:
