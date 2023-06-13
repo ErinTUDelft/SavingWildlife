@@ -29,6 +29,7 @@ detection {
 
 # focus on Kenya:
 coordinates_kenya = [-0.023559, 37.906193]
+# two corners of kenya
 coord1 = [5.387439, 33.734457]
 coord2 = [-5.169978, 43.630227]
 
@@ -50,6 +51,10 @@ df_test = p.json_normalize(data, 'images')
 locations =  set(df_test.loc[:, 'location'].values.tolist())
 # Make a list to store all camera locations in kenya
 locations_kenya = [] # [29, 46, 48, 59, 69, 98, 118, 120, 134, 139, 150, 191, 207, 215, 222, 252, 255, 277, 305, 317, 352, 355, 358, 368, 430, 435, 454, 455, 467, 483]
+
+# from manual inspection: 
+# camera 430 too many background images
+# camera 150 too many background images
 
 def loc_to_coord(locations, file,map_f):
     # make dataframe of the locations and corresponding gps coordinates
@@ -76,14 +81,18 @@ def show_all_locs(file):
         lat, lon = df['latitude'][ind], df['longitude'][ind]
         folium.Marker(location=[lat,lon]).add_to(m)
 
-# show_all_locs(gps_locations)
 def show_kenya():
+    '''Makes a map of Kenya'''
     for location in locations:
         loc_to_coord(location,gps_locations, m_test)
 show_kenya()
-# print(locations_kenya)
-def generate_kenya_df(source_ims, location_list, file):
-    df = p.read_json(file).transpose()
+
+def generate_kenya_df(source_ims, location_list):
+    '''Generates a dataframe of only the files from Kenya
+    parameters:
+    source_ims: folder where images are located
+    location_list: list of cameras of which you want the data
+    '''
 
     with open(source_ims) as data_file:    
       data = json.load(data_file) 
@@ -95,10 +104,10 @@ def generate_kenya_df(source_ims, location_list, file):
 
 
 
-
-df_kenya = generate_kenya_df(test_images_info, locations_kenya, gps_locations)
-df_kenya.to_pickle("./kenya_information.pkl")
-print(df_kenya.info())
-m.save("footprint.html")
-m_test.save('test_locations.html')
-m_kenya.save('Kenya.html')
+if __name__ == '__main__':
+  df_kenya = generate_kenya_df(test_images_info, locations_kenya, gps_locations)
+  df_kenya.to_pickle("./kenya_information.pkl")
+  print(df_kenya.info())
+  m.save("footprint.html")
+  m_test.save('test_locations.html')
+  m_kenya.save('Kenya.html')
