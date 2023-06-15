@@ -32,7 +32,7 @@ test_image = transform(test_image).reshape(1, 3, 240, 240)
 
 back_bone = torchvision.models.mobilenet_v3_small(pretrained=True)
 model_class_local = class_local(back_bone)
-model_class_local.load_state_dict(torch.load("saved_model2.pt"))
+model_class_local.load_state_dict(torch.load("saved_model3.pt"))
 model_class_local.eval()
 
 class_pred, box_pred = model_class_local(test_image)
